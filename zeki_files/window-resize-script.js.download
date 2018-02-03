@@ -1,0 +1,69 @@
+/* eslint-disable */
+
+window.__INTERVAL__ = (function() {
+
+  const currentScript =  document.currentScript || (function() {
+    return Array.from(document.getElementsByTagName('script')).find(function(s) {
+      return s.src.indexOf('window-resize-script') > -1
+    });
+  })();
+
+  var minHeightAttr = currentScript.getAttribute('data-min-height');
+  var minHeight = minHeightAttr ? parseInt(minHeightAttr, 10) : null;
+  var MOBILE_WIDTH = 320;
+
+  function getHeight(component) {
+    var height = component.scrollHeight * getViewportScaleRatio();
+    return minHeight ? Math.max(height, minHeight) : height;
+  }
+
+  function isMobile() {
+    return Wix.Utils.getDeviceType() === 'mobile';
+  }
+
+  function isEditor() {
+    return ['editor', 'preview'].indexOf(Wix.Utils.getViewMode()) > -1;
+  }
+
+  function isLandscape() {
+    var isLandscape = false;
+
+    if (typeof window.orientation !== 'undefined') {
+      isLandscape = window.orientation === 90 || window.orientation === -90;
+    } else {
+      const mql = window.matchMedia('(orientation: landscape)');
+      isLandscape = !!(mql && mql.matches === true);
+    }
+
+    return isLandscape;
+  }
+
+  function getDeviceWidth() {
+    if (isEditor()) {
+      return MOBILE_WIDTH;
+    }
+    return isLandscape() ? Math.max(window.screen.width, window.screen.height) : window.screen.width;
+  }
+
+  function getViewportScaleRatio() {
+    var isViewportFixDisabled = currentScript.getAttribute('data-viewport-fix-disabled') === 'true';
+    return (isMobile() && !isViewportFixDisabled) ? MOBILE_WIDTH / getDeviceWidth() : 1;
+  }
+
+  var isMobileHeaderEnabled = currentScript.getAttribute('data-mobile-header-enabled') === 'true';
+  if (isMobile() && !isMobileHeaderEnabled) {
+    return;
+  }
+
+  var lastHeight = 0;
+  return setInterval(function() {
+    var component = document.getElementById('content-wrapper');
+    if (component) {
+      var height = getHeight(component);
+      if (lastHeight !== height || window.innerHeight !== height) {
+        lastHeight = height;
+        Wix.setHeight(height);
+      }
+    }
+  }, 160);
+})();
